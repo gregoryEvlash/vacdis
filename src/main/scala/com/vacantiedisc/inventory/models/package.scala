@@ -20,8 +20,8 @@ package object models {
   }
 
   case class Performance(title: String, date: LocalDate, genre: Genre)
-
   case class Show(title: String, date: LocalDate)
+  case class TimeTable(title: String, date: LocalDate, capacity: Int, discountPercent: Double, dailyAvailability: Int)
 
   sealed trait ShowStatus
   case object SaleNotStarted extends ShowStatus
@@ -50,7 +50,7 @@ package object models {
 
   sealed trait InventoryResponse
   case class BookedResponse(title: String, date: LocalDate) extends InventoryResponse
-  case class OverviewResponse(values: Seq[InventoryResult]) extends InventoryResponse
+  case class OverviewResponse(inventory: Seq[InventoryResult]) extends InventoryResponse
 
   type InventoryServiceResponse = Either[InventoryError, InventoryResponse]
 

@@ -8,6 +8,8 @@ import com.vacantiedisc.inventory.service.InventoryService
 import JsonCodecs._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.joda.time.LocalDate
+import FailFastCirceSupport._
+import io.circe.generic.auto._
 
 import scala.concurrent.duration._
 
@@ -15,7 +17,7 @@ class InventoryRoute(inventoryService: InventoryService)
   extends LazyLogging
     with HttpHelper
     with Directives
-    with FailFastCirceSupport{
+{
 
 //  implicit val timeout: Timeout = Timeout(ConfigProvider.serviceConf.timeoutSec.seconds)
   implicit val timeout: Timeout = 10 seconds
@@ -27,10 +29,10 @@ class InventoryRoute(inventoryService: InventoryService)
   def routes: Route =
     pathPrefix(mainPrefix) {
       post {
-        path(overview){
-          entity(as[BookingOverviewRequest]) { request =>
-            withValidateEntity[BookingOverviewRequest, LocalDate](request){ validatedRequestDate =>
-              pathEnd {
+        pathPrefix(overview) {
+          pathEnd {
+            entity(as[BookingOverviewRequest]) { request =>
+              withValidateEntity[BookingOverviewRequest, LocalDate](request) { validatedRequestDate =>
                 logger.info(s"Get inventory for $validatedRequestDate")
                 handle {
                   inventoryService.getInventoryForDate(LocalDate.now(), validatedRequestDate)
@@ -38,15 +40,17 @@ class InventoryRoute(inventoryService: InventoryService)
               }
             }
           }
-        } ~ path(book) {
-          entity(as[BookingRequest]) { request =>
-          logger.info(s"Booking request for ${request.title} on ${request.date} amount is ${request.amount}")
-            withValidateEntity[BookingRequest, BookingRequest](request) { validatedRequest =>
-              import validatedRequest._
+        } ~ pathPrefix(book) {
+          pathEnd {
+            entity(as[BookingRequest]) { payload =>
+              logger.info(s"Booking request for ${payload.title} on ${payload.date} amount is ${payload.amount}")
+              withValidateEntity[BookingRequest, BookingRequest](payload) { validatedRequest =>
+                import validatedRequest._
                 handle {
                   inventoryService.bookPerformance(title, date, amount)
                 }
               }
+            }
           }
         }
       }

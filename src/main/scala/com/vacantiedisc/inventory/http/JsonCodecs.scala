@@ -7,11 +7,7 @@ import io.circe.generic.auto._
 import org.joda.time.LocalDate
 
 object JsonCodecs {
-  implicit val bookingRequestDecoder: Decoder[BookingRequest] =
-    Decoder[BookingRequest]
-
- implicit val bookingOverviewRequestDecoder: Decoder[BookingOverviewRequest] =
-    Decoder[BookingOverviewRequest]
+  implicit val dateEncoder: Encoder[LocalDate] = Encoder[LocalDate]
 
   implicit val inventoryServiceResponseFormat
     : Encoder[InventoryServiceResponse] = Encoder[InventoryServiceResponse]
@@ -20,7 +16,6 @@ object JsonCodecs {
     Encoder[BookedResponse]
   implicit val overviewResponseFormat: Encoder[OverviewResponse] =
     Encoder[OverviewResponse]
-  implicit val dateEncoder: Encoder[LocalDate] = Encoder[LocalDate]
 
   implicit val inventoryResponseEncoder: Encoder[InventoryResponse] =
     Encoder[InventoryResponse]

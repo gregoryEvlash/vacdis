@@ -1,46 +1,83 @@
 package com.vacantiedisc.inventory.db
 
-import com.vacantiedisc.inventory.models.{DBSearchResult, Genre, Performance, Show}
+import com.vacantiedisc.inventory.models.{DBSearchResult, Genre, Performance, Show, TimeTable}
 import org.joda.time.LocalDate
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class DB() {
 
-  private val storage = new mutable.HashMap[String, mutable.Map[LocalDate, (Int)]]()
+  private val TIMETABLE_TABLE = mutable.Set.empty[TimeTableRow]
 
-  def incr(show: Show): Option[Int] = {
-    import show._
-    storage.get(title).flatMap{ shows =>
-      val previous = shows.getOrElse(date, 0)
-      val result = shows.put(date, previous + 1)
-      storage.put(title, shows)
-      result
+  def findRow(title: String, date: LocalDate): Option[TimeTableRow] = {
+    TIMETABLE_TABLE.find{ r =>
+      r.title == title && r.date == date
     }
   }
 
-  def initDates(title: String, dates: Seq[LocalDate]): Unit = {
-    val shows = new mutable.HashMap[LocalDate, Int]()
-    dates.foreach(x => shows.put(x, 0))
-    storage.put(title, shows)
+  /**
+  *   Represent DB transaction for increment sold tickets
+    * @param show - the show which user want to buy
+    * @return Ticket already sold
+    */
+  def increaseSold(show: Show): Option[Int] = {
+    import show._
+    findRow(show.title, show.date).map{ row =>
+      val newAmount = row.sold + 1
+      val newRow  = row.copy(sold = newAmount)
+
+      TIMETABLE_TABLE.filterNot(r =>
+        r.title == title && r.date == date
+      ).add(newRow)
+
+      newAmount
+    }
   }
 
-  def getShows(date: LocalDate): Seq[DBSearchResult] =
-    storage.filter(_._2.contains(date)).map{ case (title, timeTable) =>
-      DBSearchResult(Show(title, date), timeTable.getOrElse(date, 0))
+  def insertRows(timetables: Seq[TimeTable]): Unit = {
+    timetables.foreach{ tt =>
+      import tt._
+      val row = TimeTableRow(title, date, capacity, discountPercent, dailyAvailability, 0)
+      TIMETABLE_TABLE.add(row)
+    }
+  }
+
+  def getShows(date: LocalDate): Seq[TimeTableRow] =
+    TIMETABLE_TABLE.filter(_.date == date).toSeq // to immutable
+
+  def getShowsF(date: LocalDate): Future[Seq[DBSearchResult]] = Future(
+    TIMETABLE_TABLE.filter(_.date == date).map{ row =>
+      DBSearchResult(Show(row.title, row.date), row.sold)
     }.toSeq
+  )
 
-  def getAll = storage
+  def getMaximalCapacity(show: Show): Option[Int] = {
+    findRow(show.title, show.date).map(_.capacity)
+  }
+
+  def getMaximalAvailability(show: Show): Option[Int] = {
+    findRow(show.title, show.date).map(_.dailyAvailability)
+  }
 
 
 
-  private val original = new mutable.HashMap[String, Performance]()
+/////////////////////////////////
+
+
+  private val PERFORMANCE_INFO_TABLE = new mutable.HashMap[String, Performance]()
 
   def putPerformances(batch: Seq[Performance]): Unit =
-    batch.foreach(p => original.put(p.title, p))
+    batch.foreach(p => PERFORMANCE_INFO_TABLE.put(p.title, p))
 
   def getPerformances(titles: Seq[String]): Seq[Performance] = {
-    original.filter(x => titles.contains(x._1)).values.toSeq
+    PERFORMANCE_INFO_TABLE.filter(x => titles.contains(x._1)).values.toSeq
+  }
+  def findGenres(titles: Seq[String]): Map[String, Genre] = {
+    PERFORMANCE_INFO_TABLE.filter(x => titles.contains(x._1)).values.map { p =>
+      p.title -> p.genre
+    }.toMap
   }
 
 }
