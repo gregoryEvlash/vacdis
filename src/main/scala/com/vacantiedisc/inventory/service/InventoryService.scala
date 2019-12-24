@@ -6,6 +6,8 @@ import com.vacantiedisc.inventory.util.PerformanceUtils
 import com.vacantiedisc.inventory.utils.DateUtils
 import org.joda.time.LocalDate
 
+import scala.concurrent.Future
+
 class InventoryService(db: DB) {
 
   def applyFileData(path: String): Unit = {
@@ -17,6 +19,16 @@ class InventoryService(db: DB) {
         PerformanceUtils.getSellingDates(performance.date)
       )
     }
+  }
+
+  def getInventoryForDate(queryDate: LocalDate, performanceDate: LocalDate): Future[InventoryServiceResponse] = {
+
+    ???
+  }
+
+  def bookPerformance(title: String, performanceDate: LocalDate, amount: Int): Future[InventoryServiceResponse] = {
+
+    ???
   }
 
   def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Seq[InventoryResult] = {
@@ -51,7 +63,7 @@ class InventoryService(db: DB) {
     val showStatus = show.date match {
       case d if d.isBefore(queryDate) => InThePast
       case d
-          if d.isAfter(queryDate) && DateUtils.getDaysGap(d, queryDate) > Rule.startSellingDaysBefore =>
+          if d.isAfter(queryDate) && Math.abs(DateUtils.getDaysGap(d, queryDate)) > Rule.startSellingDaysBefore =>
         SaleNotStarted
       case d if bought >= capacity => SoldOut
       case _                       => OpenForSale

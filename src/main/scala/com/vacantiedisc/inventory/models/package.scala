@@ -13,16 +13,13 @@ package object models {
   object Genre {
     def getPrice(g: Genre) = g match {
       case MUSICAL => 70
-      case COMEDY => 50
-      case DRAMA => 40
+      case COMEDY  => 50
+      case DRAMA   => 40
     }
 
   }
 
   case class Performance(title: String, date: LocalDate, genre: Genre)
-
-
-
 
   case class Show(title: String, date: LocalDate)
 
@@ -34,8 +31,26 @@ package object models {
 
   case class DBSearchResult(show: Show, bought: Int)
 
-  case class ShowInfo(title: String, ticketsLeft: Int, ticketsAvailable: Int, status: ShowStatus, price: Double)
+  case class ShowInfo(title: String,
+                      ticketsLeft: Int,
+                      ticketsAvailable: Int,
+                      status: ShowStatus,
+                      price: Double)
   case class InventoryResult(genre: Genre, shows: Seq[ShowInfo])
-  case class InventoryResultHolder(inventory: Seq[InventoryResult])
+
+
+
+
+  sealed trait InventoryError
+  case class TicketsSoldOut(title: String, date: LocalDate) extends InventoryError
+  case class NotStarted(title: String) extends InventoryError
+  case class NotFound(title: String) extends InventoryError
+  case class Custom(message: String) extends InventoryError
+
+  sealed trait InventoryResponse
+  case class BookedResponse(title: String, date: LocalDate) extends InventoryResponse
+  case class OverviewResponse(values: Seq[InventoryResult]) extends InventoryResponse
+
+  type InventoryServiceResponse = Either[InventoryError, InventoryResponse]
 
 }
