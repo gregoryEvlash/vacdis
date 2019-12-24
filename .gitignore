@@ -11,7 +11,7 @@
 /.idea/.gitignore
 /target/.history
 /.idea/*
-/target/scala-2.12/classes/com/vacantiedisc/inventory/Application$.class
+/target/*
 /target/scala-2.12/classes/com/vacantiedisc/inventory/Application.class
 /target/scala-2.12/classes/application.conf
 /target/scala-2.12/test-classes/application.conf

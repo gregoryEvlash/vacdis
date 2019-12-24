@@ -1,6 +1,5 @@
 package com.vacantiedisc.inventory.utils
 
-import com.vacantiedisc.inventory.models.Rule
 import org.joda.time.{DateTime, Days, LocalDate}
 import org.joda.time.format.DateTimeFormat
 
@@ -10,8 +9,8 @@ object DateUtils {
 
   val timeFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
 
-  def toDateTime(s: String): Option[DateTime] = {
-    Try(DateTime.parse(s, timeFormat)).toOption
+  def toDateTime(s: String): Option[LocalDate] = {
+    Try(DateTime.parse(s, timeFormat)).toOption.map(_.toLocalDate)
   }
 
   def getDaysGap(targetDate: LocalDate, baseDate: LocalDate): Int =

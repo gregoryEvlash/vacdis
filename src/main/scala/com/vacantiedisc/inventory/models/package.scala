@@ -46,6 +46,7 @@ package object models {
   case class NotStarted(title: String) extends InventoryError
   case class NotFound(title: String) extends InventoryError
   case class Custom(message: String) extends InventoryError
+  case class Validation(errors: Seq[String]) extends InventoryError
 
   sealed trait InventoryResponse
   case class BookedResponse(title: String, date: LocalDate) extends InventoryResponse

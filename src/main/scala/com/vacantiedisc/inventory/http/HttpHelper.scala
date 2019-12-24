@@ -7,6 +7,7 @@ import com.vacantiedisc.inventory.models._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import JsonCodecs._
+import com.vacantiedisc.inventory.validation.Validation.Validator
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
@@ -74,30 +75,31 @@ trait HttpHelper extends LazyLogging {
     )
   }
 
-//  /**
-//    * Take entity of T, validate it, and in case of validation errors response,
-//    * but in case of valid T its provided next to route
-//    *
-//    * @param entity Entity of type T
-//    * @param f      Function that takes entity and proceed normal flow
-//    * @tparam T type of entity
-//    * @return
-//    */
-//
-//  def withValidateEntity[T: Validator](entity: T)(f: T => Route): Route = {
-//    Validator.validate(entity).fold(nel => {
-//      complete(
-//        toResponse(
-//          either(
-//            Left(
-//              ErrorResponse(nel.toList)
-//            )
-//          )
-//        )
-//      )
-//    },
-//      f
-//    )
-//  }
+  /**
+    * Take entity of T, validate it, and in case of validation errors response,
+    * but in case of valid T its provided next to route
+    *
+    * @param entity Entity of type T
+    * @param f      Function that takes entity and proceed normal flow
+    * @tparam T type of entity for validation
+    * @tparam U result type of validated entity
+    * @return
+    */
+
+  def withValidateEntity[T, U](entity: T)(f: U => Route)(implicit v: Validator[T, U]): Route = {
+    Validator.validate(entity).fold(nel => {
+      complete(
+        toResponse(
+          either(
+            Left(
+              Validation(nel.toList)
+            )
+          )
+        )
+      )
+    },
+      f
+    )
+  }
 
 }
