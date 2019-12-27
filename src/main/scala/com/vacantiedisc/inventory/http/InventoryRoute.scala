@@ -5,11 +5,9 @@ import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.http.models.{BookingOverviewRequest, BookingRequest}
 import com.vacantiedisc.inventory.service.InventoryService
-import JsonCodecs._
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import org.joda.time.LocalDate
-import FailFastCirceSupport._
-import io.circe.generic.auto._
+import com.vacantiedisc.inventory.json._
 
 import scala.concurrent.duration._
 
@@ -19,7 +17,7 @@ class InventoryRoute(inventoryService: InventoryService)
     with Directives
 {
 
-//  implicit val timeout: Timeout = Timeout(ConfigProvider.serviceConf.timeoutSec.seconds)
+  //  implicit val timeout: Timeout = Timeout(ConfigProvider.serviceConf.timeoutSec.seconds)
   implicit val timeout: Timeout = 10 seconds
 
   private val mainPrefix = "inventory"
@@ -31,8 +29,8 @@ class InventoryRoute(inventoryService: InventoryService)
       post {
         pathPrefix(overview) {
           pathEnd {
-            entity(as[BookingOverviewRequest]) { request =>
-              withValidateEntity[BookingOverviewRequest, LocalDate](request) { validatedRequestDate =>
+            entity(as[BookingOverviewRequest]) { payload =>
+              withValidateEntity[BookingOverviewRequest, LocalDate](payload) { validatedRequestDate =>
                 logger.info(s"Get inventory for $validatedRequestDate")
                 handle {
                   inventoryService.getInventoryForDate(LocalDate.now(), validatedRequestDate)

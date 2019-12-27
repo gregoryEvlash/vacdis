@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import com.vacantiedisc.inventory.models._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
-import JsonCodecs._
+import com.vacantiedisc.inventory.json._
 import com.vacantiedisc.inventory.validation.Validation.Validator
 
 import scala.concurrent.Future
@@ -45,7 +45,7 @@ trait HttpHelper extends LazyLogging {
     */
   protected def either(value: InventoryServiceResponse): (StatusCode, String) = {
     value.fold[Resp](
-      err => StatusCodes.BadRequest -> err.asJson.noSpaces,
+      err  => StatusCodes.BadRequest -> err.asJson.noSpaces,
       resp => StatusCodes.OK -> resp.asJson.noSpaces
     )
   }
