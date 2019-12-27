@@ -80,11 +80,6 @@ class DB() {
   private def convert[_](sq: collection.mutable.Seq[_]): Seq[_] =
     collection.immutable.Seq(sq: _*)
 
-
-
-
-
-
   private val PERFORMANCE_INFO_TABLE =
     new mutable.HashMap[String, Performance]()
 

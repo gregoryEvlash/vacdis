@@ -8,16 +8,6 @@ package object models {
   case object MUSICAL extends Genre
   case object COMEDY extends Genre
   case object DRAMA extends Genre
-//  todo to config
-
-  object Genre {
-    def getPrice(g: Genre): Int = g match {
-      case MUSICAL => 70
-      case COMEDY  => 50
-      case DRAMA   => 40
-    }
-
-  }
 
   case class Performance(title: String, date: LocalDate, genre: Genre)
   case class Show(title: String, date: LocalDate)

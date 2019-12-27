@@ -4,9 +4,10 @@ import com.typesafe.config.ConfigFactory
 
 object ConfigProvider {
 
-  lazy val conf = ConfigFactory.load()
+  private lazy val conf = ConfigFactory.load()
 
-  lazy val httpConf = HttpConf.apply(conf)
-//  lazy val serviceConf = ServiceConf.apply(conf)
+  lazy val httpConf       = HttpConf.apply(conf)
+  lazy val conditionsConf = ConditionsConf.apply(conf)
+  lazy val priceConf      = PriceConf.apply(conf)
 
 }

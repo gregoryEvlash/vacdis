@@ -3,6 +3,7 @@ package com.vacantiedisc.inventory.service
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
+import com.vacantiedisc.inventory.config.{ConditionsConf, PriceConf}
 import com.vacantiedisc.inventory.db.{DB, TimeTableRow}
 import com.vacantiedisc.inventory.models._
 import com.vacantiedisc.inventory.service.PerformanceService._
@@ -14,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class InventoryService(db: DB, performanceService: ActorRef) {
+class InventoryService(db: DB, conditionsConf: ConditionsConf, priceConf: PriceConf, performanceService: ActorRef) {
 
   implicit val timeout: Timeout = 10.seconds
 
@@ -22,7 +23,7 @@ class InventoryService(db: DB, performanceService: ActorRef) {
     for{
       data <- Future(FileService.parseFile(path))
       _    <- db.putPerformances(data)
-      timeTables = data.flatMap(PerformanceUtils.convertToTimeTable)
+      timeTables = data.flatMap(PerformanceUtils.convertToTimeTable(_)(conditionsConf))
       _    <- db.insertRows(timeTables)
     } yield ()
 
@@ -114,20 +115,26 @@ class InventoryService(db: DB, performanceService: ActorRef) {
       ticketsLeft = capacity - sold,
       ticketsAvailable = dailyAvailability - availability.getOrElse(title, 0),
       status = deriveShowStatus(row, queryDate),
-      price = calculatePrice(genre, discountPercent)
+      price = calculatePrice(genre, discountPercent)(priceConf)
     )
   }
 
-  protected def calculatePrice(genre: Genre, discountPercent: Double): Double = {
-    Genre.getPrice(genre) * (100 - discountPercent) / 100
+  protected def calculatePrice(genre: Genre, discountPercent: Double)(priceConf: PriceConf): Double = {
+    val basicPrice = genre match {
+      case MUSICAL => priceConf.musical
+      case COMEDY  => priceConf.comedy
+      case DRAMA   => priceConf.drama
+    }
+
+    basicPrice * (100 - discountPercent) / 100
   }
 
   protected def deriveShowStatus(dbValue: TimeTableRow, queryDate: LocalDate): ShowStatus = {
     import dbValue._
     date match {
       case d if d.isBefore(queryDate) => InThePast
-      case d if d.isAfter(queryDate) && Math.abs(DateUtils.getDaysGap(d, queryDate)) > Rule.startSellingDaysBefore =>
-        SaleNotStarted
+      case d if d.isAfter(queryDate) && Math.abs(DateUtils.getDaysGap(d, queryDate)) >
+        conditionsConf.sellingStartBeforeDays => SaleNotStarted
       case _ if sold >= capacity      => SoldOut
       case _                          => OpenForSale
     }

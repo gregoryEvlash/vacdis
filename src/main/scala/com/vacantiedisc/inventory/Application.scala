@@ -13,11 +13,11 @@ object Application extends CLI{
 
   def main(args: Array[String]): Unit = {
     implicit val system: ActorSystem = ActorSystem()
-    val httpConf: HttpConf = ConfigProvider.httpConf
+    import ConfigProvider._
 
     val db = new DB()
     val performanceService = system.actorOf(Props(classOf[PerformanceService], db))
-    val inventoryService = new InventoryService(db, performanceService)
+    val inventoryService = new InventoryService(db, conditionsConf, priceConf, performanceService)
 
     initData(args)(inventoryService)
     val appliedArgsResult = applyArguments(args)(inventoryService)
