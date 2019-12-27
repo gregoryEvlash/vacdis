@@ -5,11 +5,12 @@ import akka.actor.{Actor, ActorRef}
 import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.db.DB
 import com.vacantiedisc.inventory.service.PerformanceService._
-import com.vacantiedisc.inventory.utils.DateUtils
+import com.vacantiedisc.inventory.util.DateUtils
 import org.joda.time.LocalDate
 
 import scala.collection.mutable
 import scala.concurrent.Future
+import scala.util.Try
 
 class PerformanceService(db: DB) extends Actor with LazyLogging {
 
@@ -32,9 +33,13 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
 
     case BookShow(title, performanceDate, amount) =>
       Future{
-        val key  = buildKey(title, performanceDate)
-        ledger.put(key, ledger.getOrElse(key, 0) + amount)
-        ShowSuccessfullyBooked
+        Try {
+          val key = buildKey(title, performanceDate)
+          ledger.put(key, ledger.getOrElse(key, 0) + amount)
+          ShowSuccessfullyBooked(title, performanceDate, amount)
+        }.recover {
+          case t => Error(t.getMessage)
+        }.get
       }  pipeTo sender
 
     case GetPerformanceSoldRequestBatch(titles, date) =>
@@ -44,6 +49,9 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
       }.toMap
 
       sender ! PerformanceSoldTodayBatch(sold)
+
+    case other =>
+      sender ! Error("Unexpected message")
 
   }
 
@@ -64,7 +72,7 @@ object PerformanceService {
   case class GetPerformanceSoldRequestBatch(titles: Seq[String], performanceDate: LocalDate) extends PerformanceServiceMessage
 
   case class BookShow(title: String, performanceDate: LocalDate, amount: Int) extends PerformanceServiceMessage
-  case object ShowSuccessfullyBooked extends PerformanceServiceMessage
+  case class ShowSuccessfullyBooked(title: String, performanceDate: LocalDate, amount: Int) extends PerformanceServiceMessage
 
   case object ResetAvailability extends PerformanceServiceMessage
 

@@ -4,7 +4,7 @@ import com.vacantiedisc.inventory.http.models.{
   BookingOverviewRequest,
   BookingRequest
 }
-import com.vacantiedisc.inventory.utils.DateUtils
+import com.vacantiedisc.inventory.util.DateUtils
 import org.joda.time.LocalDate
 
 /**

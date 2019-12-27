@@ -1,13 +1,13 @@
-package com.vacantiedisc.inventory.utils
+package com.vacantiedisc.inventory.util
 
 import org.joda.time.{DateTime, Days, LocalDate}
-import org.joda.time.format.DateTimeFormat
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 
 import scala.util.Try
 
 object DateUtils {
 
-  val timeFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
+  val timeFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
 
   def toDateTime(s: String): Option[LocalDate] = {
     Try(DateTime.parse(s, timeFormat)).toOption.map(_.toLocalDate)

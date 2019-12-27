@@ -7,16 +7,16 @@ import com.vacantiedisc.inventory.db.{DB, TimeTableRow}
 import com.vacantiedisc.inventory.models._
 import com.vacantiedisc.inventory.service.PerformanceService._
 import com.vacantiedisc.inventory.util.PerformanceUtils
-import com.vacantiedisc.inventory.utils.DateUtils
+import com.vacantiedisc.inventory.util.DateUtils
 import org.joda.time.LocalDate
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class InventoryService(db: DB, performanceService: ActorRef) {
 
-  implicit val timeout: Timeout = 10 seconds
+  implicit val timeout: Timeout = 10.seconds
 
   def applyFileData(path: String): Future[Unit] =
     for{
@@ -31,27 +31,59 @@ class InventoryService(db: DB, performanceService: ActorRef) {
       .map{ seq => Right(OverviewResponse(seq)) }
 
   def bookPerformance(title: String, performanceDate: LocalDate, amount: Int): Future[InventoryServiceResponse] = {
+    deriveBookingAvailability(title, performanceDate, amount)
+      .flatMap{ either =>
+        either.fold(
+          l => Future.successful(Left(l)),
+          r => (performanceService ? BookShow(r.title, performanceDate, amount))
+            .mapTo[PerformanceServiceMessage]
+            .flatMap(handleBookingResponse)
+        )
+      }
+  }
 
-    val bookResult = (performanceService ? BookShow(title, performanceDate, amount)).mapTo[PerformanceServiceMessage]
+  private def handleBookingResponse(msg: PerformanceServiceMessage): Future[InventoryServiceResponse] = msg match{
+    case ShowSuccessfullyBooked(title, performanceDate, amount) =>
+      db.increaseSold(Show(title, performanceDate), amount).map{ _ =>
+        Right(BookedResponse(title, performanceDate, amount))
+      }
+    case other =>
+      Future(
+        Left(Custom(s"There were internal error $other"))
+      )
+  }
 
-    bookResult.flatMap{
-      case ShowSuccessfullyBooked =>
-        db.increaseSold(Show(title, performanceDate), amount).map{ _ =>
-          Right(BookedResponse(title, performanceDate, amount))
-        }
-      case other                  =>
-        Future(Left(TicketsSoldOut(title, performanceDate)))
+  protected def deriveBookingAvailability(title: String, performanceDate: LocalDate, amount: Int): Future[Either[InventoryError, TimeTableRow]] = {
+    for{
+      maybeRow     <- db.findRow(title, performanceDate)
+      availability <- askAvailability(title, performanceDate)
+    } yield {
+      maybeRow match {
+        case None    =>
+          Left(NotFound(title))
+        case Some(p) if deriveShowStatus(p, LocalDate.now) == InThePast =>
+          Left(Custom(s"You cant book show that has already passed"))
+        case Some(p) if deriveShowStatus(p, LocalDate.now) == SaleNotStarted =>
+          Left(NotStarted(title))
+        case Some(p) if p.sold >= p.capacity =>
+          Left(TicketsSoldOut(title, performanceDate))
+        case Some(p) if p.dailyAvailability <= availability.sold =>
+          Left(Custom(s"Tickets limit on $title reached for today"))
+        case Some(p) if p.dailyAvailability - availability.sold <= amount=>
+          Left(Custom(s"You cant by more than ${p.dailyAvailability - availability.sold} tickets today"))
+        case Some(p) =>
+          Right(p)
+      }
     }
   }
 
-
-  def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Future[Seq[InventoryResult]] = {
+  protected def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Future[Seq[InventoryResult]] = {
 
     val result = for{
       rows  <- db.getShows(performanceDate)
       titles = rows.map(_.title)
       genres <- db.findGenres(titles)
-      availability <- askAvailability(titles, performanceDate)
+      availability <- askAvailabilityBatch(titles, performanceDate)
     } yield {
       for{
         row   <- rows
@@ -69,10 +101,13 @@ class InventoryService(db: DB, performanceService: ActorRef) {
     }.toSeq
   }
 
-  private def askAvailability(titles: Seq[String], performanceDate: LocalDate): Future[PerformanceSoldTodayBatch] =
+  private def askAvailabilityBatch(titles: Seq[String], performanceDate: LocalDate): Future[PerformanceSoldTodayBatch] =
     (performanceService ? GetPerformanceSoldRequestBatch(titles, performanceDate)).mapTo[PerformanceSoldTodayBatch]
 
-  def buildShowInfo(row: TimeTableRow, genre: Genre, availability: Map[String, Int], queryDate: LocalDate): ShowInfo = {
+  private def askAvailability(title: String, performanceDate: LocalDate): Future[PerformanceSoldToday] =
+    (performanceService ? GetPerformanceSoldRequest(title, performanceDate)).mapTo[PerformanceSoldToday]
+
+  protected def buildShowInfo(row: TimeTableRow, genre: Genre, availability: Map[String, Int], queryDate: LocalDate): ShowInfo = {
     import row._
     ShowInfo(
       title = title,
@@ -83,18 +118,18 @@ class InventoryService(db: DB, performanceService: ActorRef) {
     )
   }
 
-  def calculatePrice(genre: Genre, discountPercent: Double): Double = {
+  protected def calculatePrice(genre: Genre, discountPercent: Double): Double = {
     Genre.getPrice(genre) * (100 - discountPercent) / 100
   }
 
-  def deriveShowStatus(dbValue: TimeTableRow, queryDate: LocalDate): ShowStatus = {
+  protected def deriveShowStatus(dbValue: TimeTableRow, queryDate: LocalDate): ShowStatus = {
     import dbValue._
     date match {
       case d if d.isBefore(queryDate) => InThePast
       case d if d.isAfter(queryDate) && Math.abs(DateUtils.getDaysGap(d, queryDate)) > Rule.startSellingDaysBefore =>
         SaleNotStarted
-      case _ if sold >= capacity => SoldOut
-      case _                     => OpenForSale
+      case _ if sold >= capacity      => SoldOut
+      case _                          => OpenForSale
     }
   }
 

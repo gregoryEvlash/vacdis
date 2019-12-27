@@ -1,12 +1,11 @@
 package com.vacantiedisc.inventory
 
-import io.circe.generic.extras.Configuration
 import com.vacantiedisc.inventory.http.models.{BookingOverviewRequest, BookingRequest}
 import com.vacantiedisc.inventory.models._
-import com.vacantiedisc.inventory.utils.DateUtils
-import io.circe.Json.JString
+import com.vacantiedisc.inventory.util.DateUtils
 import io.circe._
 import io.circe.generic.auto._
+import io.circe.generic.extras.Configuration
 import io.circe.generic.semiauto._
 import org.joda.time.LocalDate
 
@@ -65,5 +64,11 @@ package object json {
     )
   }
 
-  implicit val inventoryErrorEncoder: Encoder[InventoryError] = Encoder[InventoryError]
+  implicit val inventoryErrorEncoder: Encoder[InventoryError] = {
+    case v: TicketsSoldOut => ticketsSoldOutErrorEncoder(v)
+    case v: NotStarted     => NotStartedErrorEncoder(v)
+    case v: NotFound       => NotFoundErrorEncoder(v)
+    case v: Custom         => customErrorEncoder(v)
+    case v: Validation     => validationErrorEncoder(v)
+  }
 }

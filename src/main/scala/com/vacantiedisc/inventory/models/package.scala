@@ -1,6 +1,6 @@
 package com.vacantiedisc.inventory
 
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.LocalDate
 
 package object models {
 
@@ -11,7 +11,7 @@ package object models {
 //  todo to config
 
   object Genre {
-    def getPrice(g: Genre) = g match {
+    def getPrice(g: Genre): Int = g match {
       case MUSICAL => 70
       case COMEDY  => 50
       case DRAMA   => 40

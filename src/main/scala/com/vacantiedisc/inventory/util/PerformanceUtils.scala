@@ -1,9 +1,6 @@
 package com.vacantiedisc.inventory.util
 
 import com.vacantiedisc.inventory.models._
-import Rule._
-import com.vacantiedisc.inventory.utils.DateUtils
-import org.joda.time.{Days, LocalDate}
 
 object PerformanceUtils {
 
