@@ -23,7 +23,7 @@ object Application {
     val performanceService = system.actorOf(Props(classOf[PerformanceService], db))
     val inventoryService = new InventoryService(db, performanceService)
     inventoryService.applyFileData(path)
-    val result = inventoryService.getInventory(qD, td)
+//    val result = inventoryService.getInventory(qD, td)
 //    println(result.map(_.genre))
 
     val httpConf: HttpConf = ConfigProvider.httpConf

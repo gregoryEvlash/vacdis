@@ -18,48 +18,59 @@ class InventoryService(db: DB, performanceService: ActorRef) {
 
   implicit val timeout: Timeout = 10 seconds
 
-  def applyFileData(path: String): Unit = {
-    val data = FileService.parseFile(path)
-    db.putPerformances(data)
-    data.foreach{ performance =>
-      db.insertRows(PerformanceUtils.convertToTimeTable(performance))
-    }
-  }
+  def applyFileData(path: String): Future[Unit] =
+    for{
+      data <- Future(FileService.parseFile(path))
+      _    <- db.putPerformances(data)
+      timeTables = data.flatMap(PerformanceUtils.convertToTimeTable)
+      _    <- db.insertRows(timeTables)
+    } yield ()
 
-  def getInventoryForDate(queryDate: LocalDate, performanceDate: LocalDate): Future[InventoryServiceResponse] = {
-    Future{
-      Right(
-        OverviewResponse(getInventory(queryDate, performanceDate))
-      )
-    }
-  }
+  def getInventoryForDate(queryDate: LocalDate, performanceDate: LocalDate): Future[InventoryServiceResponse] =
+    getInventory(queryDate, performanceDate)
+      .map{ seq => Right(OverviewResponse(seq)) }
 
   def bookPerformance(title: String, performanceDate: LocalDate, amount: Int): Future[InventoryServiceResponse] = {
 
-    performanceService ? BookShow(title, performanceDate)
-    ???
+    val bookResult = (performanceService ? BookShow(title, performanceDate, amount)).mapTo[PerformanceServiceMessage]
+
+    bookResult.flatMap{
+      case ShowSuccessfullyBooked =>
+        db.increaseSold(Show(title, performanceDate), amount).map{ _ =>
+          Right(BookedResponse(title, performanceDate, amount))
+        }
+      case other                  =>
+        Future(Left(TicketsSoldOut(title, performanceDate)))
+    }
   }
 
-  def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Seq[InventoryResult] = {
-    val dbRows = db.getShows(performanceDate)
-    val titles = dbRows.map(_.title)
-    val genres = db.findGenres(titles)
 
-    // todo with a thread safe
-    val f = (performanceService ? GetPerformanceSoldRequestBatch(titles, performanceDate)).mapTo[PerformanceSoldTodayBatch]
-    val availability = Await.result(f, 5 seconds)
+  def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Future[Seq[InventoryResult]] = {
 
     val result = for{
-      row  <- dbRows
-      genre <- genres.get(row.title)
+      rows  <- db.getShows(performanceDate)
+      titles = rows.map(_.title)
+      genres <- db.findGenres(titles)
+      availability <- askAvailability(titles, performanceDate)
     } yield {
-      genre -> buildShowInfo(row, genre, availability.sold, queryDate)
+      for{
+        row   <- rows
+        genre <- genres.get(row.title)
+      } yield {
+        genre -> buildShowInfo(row, genre, availability.sold, queryDate)
+      }
     }
+    result.map(toInventoryResult)
+  }
 
-    result.groupBy(_._1).map{ case (genre, genreAndInfo) =>
+  private def toInventoryResult(info: Seq[(Genre, ShowInfo)]): Seq[InventoryResult] = {
+    info.groupBy(_._1).map{ case (genre, genreAndInfo) =>
       InventoryResult(genre, genreAndInfo.map(_._2))
     }.toSeq
   }
+
+  private def askAvailability(titles: Seq[String], performanceDate: LocalDate): Future[PerformanceSoldTodayBatch] =
+    (performanceService ? GetPerformanceSoldRequestBatch(titles, performanceDate)).mapTo[PerformanceSoldTodayBatch]
 
   def buildShowInfo(row: TimeTableRow, genre: Genre, availability: Map[String, Int], queryDate: LocalDate): ShowInfo = {
     import row._

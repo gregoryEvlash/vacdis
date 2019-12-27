@@ -21,7 +21,7 @@ package object json {
     case j if j.isString => DateUtils.toDateTime(j.asString.getOrElse("")).toRight[DecodingFailure](localDateDecoderError)
     case _ => Left(localDateDecoderError)
   }
-  implicit val dateEncoder: Encoder[LocalDate] = Encoder[LocalDate]
+  implicit val dateEncoder: Encoder[LocalDate] = x => Json.fromString(x.toString(DateUtils.timeFormat))
 
   implicit val inventoryServiceResponseFormat: Encoder[InventoryServiceResponse] = Encoder[InventoryServiceResponse]
 

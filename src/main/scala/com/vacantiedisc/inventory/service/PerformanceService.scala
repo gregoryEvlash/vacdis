@@ -25,16 +25,17 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
         val key = buildKey(title, performanceDate)
         val sold = ledger.getOrElse(key, 0)
         PerformanceSoldToday(sold)
-      }pipeTo sender
+      } pipeTo sender
 
-    case ResetAvailability =>  ledger.mapValues{ _ => 0}
+    case ResetAvailability =>
+      ledger.mapValues{ _ => 0}
 
-    case BookShow(title, performanceDate) =>
-      val originalSender = sender
-      val key  = buildKey(title, performanceDate)
+    case BookShow(title, performanceDate, amount) =>
       Future{
-        val sold = ledger.get(key).getOrElse()
-      }
+        val key  = buildKey(title, performanceDate)
+        ledger.put(key, ledger.getOrElse(key, 0) + amount)
+        ShowSuccessfullyBooked
+      }  pipeTo sender
 
     case GetPerformanceSoldRequestBatch(titles, date) =>
       val sold = titles.map{t =>
@@ -44,10 +45,7 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
 
       sender ! PerformanceSoldTodayBatch(sold)
 
-
-
   }
-
 
 
   // todo move to helper
@@ -65,11 +63,14 @@ object PerformanceService {
   case class GetPerformanceSoldRequest(title: String, performanceDate: LocalDate) extends PerformanceServiceMessage
   case class GetPerformanceSoldRequestBatch(titles: Seq[String], performanceDate: LocalDate) extends PerformanceServiceMessage
 
-  case class BookShow(title: String, performanceDate: LocalDate) extends PerformanceServiceMessage
+  case class BookShow(title: String, performanceDate: LocalDate, amount: Int) extends PerformanceServiceMessage
+  case object ShowSuccessfullyBooked extends PerformanceServiceMessage
+
   case object ResetAvailability extends PerformanceServiceMessage
 
   case class PerformanceSoldToday(sold: Int) extends PerformanceServiceMessage
   case class PerformanceSoldTodayBatch(sold: Map[String, Int]) extends PerformanceServiceMessage
 
+  case class Error(msg: String) extends PerformanceServiceMessage
 
 }
