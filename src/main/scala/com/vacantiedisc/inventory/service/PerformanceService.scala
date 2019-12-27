@@ -1,15 +1,16 @@
 package com.vacantiedisc.inventory.service
 
+import akka.actor.Actor
 import akka.pattern.pipe
-import akka.actor.{Actor, ActorRef}
 import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.db.DB
 import com.vacantiedisc.inventory.service.PerformanceService._
-import com.vacantiedisc.inventory.util.DateUtils
-import org.joda.time.LocalDate
+import com.vacantiedisc.inventory.util.PerformanceUtils._
+import org.joda.time.{DateTime, LocalDate}
 
 import scala.collection.mutable
-import scala.concurrent.Future
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.{Future, duration}
 import scala.util.Try
 
 class PerformanceService(db: DB) extends Actor with LazyLogging {
@@ -18,6 +19,18 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
   private val ledger = new mutable.HashMap[KEY, Int]()
 
   import context._
+
+  override def preRestart(reason: Throwable, message: Option[Any]) {
+    self ! ResetAvailability
+    system.scheduler.scheduleAtFixedRate(
+      timeToMidnight,
+      FiniteDuration(24, duration.HOURS),
+      self,
+      ResetAvailability
+    )
+
+    super.preRestart(reason, message)
+  }
 
   override def receive: Receive = {
 
@@ -51,16 +64,14 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
       sender ! PerformanceSoldTodayBatch(sold)
 
     case other =>
+      logger.warn(s"Unexpected message $other")
       sender ! Error("Unexpected message")
 
   }
 
-
-  // todo move to helper
-  private val delim = "_-_"
-
-  private def buildKey(title: String, performanceDate: LocalDate): String = {
-    s"${performanceDate.toString(DateUtils.timeFormat)}$delim$title"
+  private def timeToMidnight: FiniteDuration = {
+    val millisGap = DateTime.now().plusDays(1).withTimeAtStartOfDay().getMillis - DateTime.now.getMillis
+    Duration.apply(millisGap, duration.MILLISECONDS)
   }
 
 }
