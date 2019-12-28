@@ -10,7 +10,7 @@ class PriceConf(
 
 object PriceConf {
   def apply(conf: Config): PriceConf = {
-    val c = conf.getConfig("prices")
+    val c = conf.getConfig("price")
     new PriceConf(
       c.getDouble("comedy"),
       c.getDouble("musical"),

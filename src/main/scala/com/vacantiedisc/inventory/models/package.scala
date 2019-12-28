@@ -1,5 +1,6 @@
 package com.vacantiedisc.inventory
 
+import io.circe.generic.extras.ConfiguredJsonCodec
 import org.joda.time.LocalDate
 
 package object models {

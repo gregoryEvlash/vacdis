@@ -5,15 +5,16 @@ import com.vacantiedisc.inventory.models._
 import com.vacantiedisc.inventory.util.DateUtils
 import io.circe._
 import io.circe.generic.auto._
-import io.circe.generic.extras.Configuration
-import io.circe.generic.semiauto._
+import io.circe.magnolia.configured.Configuration
+import io.circe.magnolia.configured.decoder.semiauto._
+import io.circe.magnolia.configured.encoder.semiauto._
 import org.joda.time.LocalDate
 
 package object json {
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
 
-  implicit val bookingOverviewRequestDecoder: Decoder[BookingOverviewRequest] = deriveDecoder[BookingOverviewRequest]
-  implicit val bookingRequestDecoder: Decoder[BookingRequest] = deriveDecoder[BookingRequest]
+  implicit val bookingOverviewRequestDecoder: Decoder[BookingOverviewRequest] = deriveConfiguredMagnoliaDecoder[BookingOverviewRequest]
+  implicit val bookingRequestDecoder: Decoder[BookingRequest] = deriveConfiguredMagnoliaDecoder[BookingRequest]
 
   val localDateDecoderError = DecodingFailure("Wrong date format", Nil)
   implicit val dateDecoder: Decoder[LocalDate] = _.value match {
@@ -35,11 +36,12 @@ package object json {
     case COMEDY =>Json.fromString("comedy")
     case DRAMA =>Json.fromString("drama")
   }
-  implicit val showInfoEncoder: Encoder[ShowInfo] = deriveEncoder[ShowInfo]
-  implicit val inventoryResultEncoder: Encoder[InventoryResult] = deriveEncoder[InventoryResult]
 
-  implicit val bookedResponseFormat: Encoder[BookedResponse] = deriveEncoder[BookedResponse]
-  implicit val overviewResponseFormat: Encoder[OverviewResponse] = deriveEncoder[OverviewResponse]
+  implicit val showInfoEncoder: Encoder[ShowInfo] = deriveConfiguredMagnoliaEncoder[ShowInfo]
+  implicit val inventoryResultEncoder: Encoder[InventoryResult] = deriveConfiguredMagnoliaEncoder[InventoryResult]
+
+  implicit val bookedResponseFormat: Encoder[BookedResponse] = deriveConfiguredMagnoliaEncoder[BookedResponse]
+  implicit val overviewResponseFormat: Encoder[OverviewResponse] = deriveConfiguredMagnoliaEncoder[OverviewResponse]
 
   implicit val inventoryResponseEncoder: Encoder[InventoryResponse] = {
     case v: BookedResponse => bookedResponseFormat(v)

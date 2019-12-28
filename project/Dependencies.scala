@@ -19,7 +19,8 @@ object Dependencies {
     "io.circe" %% "circe-generic" % "0.12.3",
     "io.circe" %% "circe-parser" % "0.12.3",
     "io.circe" %% "circe-generic-extras" % "0.12.2",
-    "de.heikoseeberger" %% "akka-http-circe" % "1.30.0"
+    "de.heikoseeberger" %% "akka-http-circe" % "1.30.0",
+    "io.circe" %% "circe-magnolia-derivation" % "0.4.0"
   )
 
   val csv = "com.github.tototoshi" %% "scala-csv" % "1.3.6"

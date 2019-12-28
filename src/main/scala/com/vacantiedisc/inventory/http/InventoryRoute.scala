@@ -17,7 +17,6 @@ class InventoryRoute(inventoryService: InventoryService)
     with Directives
 {
 
-  //  implicit val timeout: Timeout = Timeout(ConfigProvider.serviceConf.timeoutSec.seconds)
   implicit val timeout: Timeout = 10 seconds
 
   private val mainPrefix = "inventory"
