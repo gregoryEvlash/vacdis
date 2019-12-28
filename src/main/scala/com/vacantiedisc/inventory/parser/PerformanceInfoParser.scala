@@ -1,18 +1,9 @@
 package com.vacantiedisc.inventory.parser
 
 import com.vacantiedisc.inventory.models._
-import org.joda.time.LocalDate
-import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
-
-import scala.util.Try
+import com.vacantiedisc.inventory.util.DateUtils
 
 object PerformanceInfoParser {
-
-  val dateTimeFormat: DateTimeFormatter = DateTimeFormat.forPattern("yyyy-MM-dd")
-
-  def parseDateTime(x: String): Option[LocalDate] = {
-    Try(dateTimeFormat.parseLocalDate(x)).toOption
-  }
 
   def parseGenre(s: String): Option[Genre] = s.toLowerCase match {
     case "musical" => Some(MUSICAL)
@@ -25,7 +16,7 @@ object PerformanceInfoParser {
     row match {
       case title :: date :: genre :: Nil =>
         for {
-          dateValue  <- parseDateTime(date)
+          dateValue  <- DateUtils.toDateTime(date)
           genreValue <- parseGenre(genre)
         } yield {
           Performance(title, dateValue, genreValue)

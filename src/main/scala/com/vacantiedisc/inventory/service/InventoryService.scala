@@ -133,7 +133,7 @@ class InventoryService(db: DB, conditionsConf: ConditionsConf, priceConf: PriceC
     import dbValue._
     date match {
       case d if d.isBefore(queryDate) => InThePast
-      case d if d.isAfter(queryDate) && Math.abs(DateUtils.getDaysGap(d, queryDate)) >
+      case d if d.isAfter(queryDate) && DateUtils.getDaysGap(d, queryDate) >
         conditionsConf.sellingStartBeforeDays => SaleNotStarted
       case _ if sold >= capacity      => SoldOut
       case _                          => OpenForSale

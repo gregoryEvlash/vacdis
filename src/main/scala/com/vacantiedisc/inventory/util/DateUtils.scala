@@ -14,5 +14,6 @@ object DateUtils {
   }
 
   def getDaysGap(targetDate: LocalDate, baseDate: LocalDate): Int =
-    Days.daysBetween(targetDate, baseDate).getDays
+    Math.abs(Days.daysBetween(targetDate, baseDate).getDays)
+
 }

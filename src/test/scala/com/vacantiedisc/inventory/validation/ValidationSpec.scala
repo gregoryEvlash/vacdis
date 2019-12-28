@@ -2,7 +2,10 @@ package com.vacantiedisc.inventory.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import com.vacantiedisc.inventory.http.models.{BookingOverviewRequest, BookingRequest}
+import com.vacantiedisc.inventory.http.models.{
+  BookingOverviewRequest,
+  BookingRequest
+}
 import com.vacantiedisc.inventory.util.DateUtils
 import com.vacantiedisc.inventory.validation.Validation._
 import org.joda.time.LocalDate
@@ -14,12 +17,16 @@ class ValidationSpec extends WordSpec with Matchers {
 
     "pass properly" in {
       val request = BookingRequest("Test", LocalDate.now, 1)
-      Validation.bookingRequestValidator.validate(request) shouldBe Valid(request)
+      Validation.bookingRequestValidator.validate(request) shouldBe Valid(
+        request
+      )
     }
 
     "error on short list" in {
       val request = BookingRequest("Test", LocalDate.now, -88)
-      Validation.bookingRequestValidator.validate(request) shouldBe Invalid(NonEmptyList(WRONG_AMOUNT_FORMAT, Nil))
+      Validation.bookingRequestValidator.validate(request) shouldBe Invalid(
+        NonEmptyList(WRONG_AMOUNT_FORMAT, Nil)
+      )
     }
 
   }
@@ -34,7 +41,9 @@ class ValidationSpec extends WordSpec with Matchers {
 
     "error on short list" in {
       val request = BookingOverviewRequest("test_123")
-      Validation.dateValidator.validate(request) shouldBe Invalid(NonEmptyList(WRONG_DATE_FORMAT, Nil))
+      Validation.dateValidator.validate(request) shouldBe Invalid(
+        NonEmptyList(WRONG_DATE_FORMAT, Nil)
+      )
     }
 
   }
