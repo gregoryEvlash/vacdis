@@ -9,7 +9,8 @@ object Dependencies {
 
   val cats = "org.typelevel" %% "cats-core" % "2.0.0"
 
-  val log = Seq("ch.qos.logback" % "logback-classic" % "1.2.3",
+  val log = Seq(
+    "ch.qos.logback" % "logback-classic" % "1.2.3",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
   )
 
@@ -25,7 +26,8 @@ object Dependencies {
 
   val akka = Seq(
     "com.typesafe.akka" %% "akka-actor" % "2.6.1",
-    "com.typesafe.akka" %% "akka-http" % "10.1.11"
+    "com.typesafe.akka" %% "akka-http" % "10.1.11",
+    "com.typesafe.akka" %% "akka-testkit" % "2.6.1" % Test
   )
 
   val all = Seq(jodaTime, scalatest, cats, csv) ++ log ++ akka ++ json

@@ -69,6 +69,5 @@ class DBSpec extends WordSpec with Matchers with TestDataUtil{
     }
   }
 
-  private def await[T](f: Future[T]): T = Await.result(f, 5.seconds)
 
 }

@@ -42,7 +42,7 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
       } pipeTo sender
 
     case ResetAvailability =>
-      ledger.mapValues{ _ => 0}
+     ledger.clear()
 
     case BookShow(title, performanceDate, amount) =>
       Future{
