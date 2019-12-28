@@ -1,17 +1,10 @@
 package com.vacantiedisc.inventory.util
 
+import com.vacantiedisc.inventory.TestDataUtil
 import com.vacantiedisc.inventory.config.ConditionsConf
-import com.vacantiedisc.inventory.models.{
-  COMEDY,
-  Performance,
-  PerformanceCondition
-}
-import org.joda.time.LocalDate
 import org.scalatest.{Matchers, WordSpec}
 
-import scala.util.Random
-
-class PerformanceUtilsSpec extends WordSpec with Matchers {
+class PerformanceUtilsSpec extends WordSpec with Matchers with TestDataUtil{
 
   "PerformanceUtilsSpec" should {
 
@@ -54,22 +47,5 @@ class PerformanceUtilsSpec extends WordSpec with Matchers {
 
     }
 
-  }
-
-  private def generateNow: LocalDate = LocalDate.now()
-
-  private def generatePerformance =
-    Performance(Random.nextString(20), generateNow, COMEDY)
-
-  private def nextInt(i: Int) = Random.nextInt(10)
-
-  private def generateCondition(i: Int, discount: Int = 0) = {
-    PerformanceCondition(
-      startAfterDays = nextInt(i),
-      endAfterDays = nextInt(i) + 10,
-      capacity = nextInt(i),
-      discountPercent = 0,
-      dailyAvailability = nextInt(i)
-    )
   }
 }

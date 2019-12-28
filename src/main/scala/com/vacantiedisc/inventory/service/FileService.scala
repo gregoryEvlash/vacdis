@@ -6,7 +6,6 @@ import com.github.tototoshi.csv.CSVReader
 import com.vacantiedisc.inventory.models.Performance
 import com.vacantiedisc.inventory.parser.PerformanceInfoParser
 
-
 import scala.util.Try
 
 object FileService {

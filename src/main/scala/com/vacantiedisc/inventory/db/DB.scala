@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 class DB() {
 
-  private val notFoundException = new Exception("Performance not found")
+  val notFoundException = new Exception("Performance not found")
 
   private val TIMETABLE_TABLE = mutable.Set.empty[TimeTableRow]
 
@@ -35,13 +35,6 @@ class DB() {
     } yield addedRow.sold
   }
 
-  private def addRow(row: TimeTableRow): Future[TimeTableRow] = Future {
-    TIMETABLE_TABLE
-      .filterNot(r => r.title == row.title && r.date == row.date)
-      .add(row)
-    row
-  }
-
   def insertRows(timetables: Seq[TimeTable]): Future[Unit] = Future(
     timetables.foreach { tt =>
       import tt._
@@ -62,23 +55,19 @@ class DB() {
       TIMETABLE_TABLE.filter(_.date == date).toSeq
     )
 
-  def getShowsF(date: LocalDate): Future[Seq[DBSearchResult]] = Future(
-    TIMETABLE_TABLE
-      .filter(_.date == date)
-      .map { row =>
-        DBSearchResult(Show(row.title, row.date), row.sold)
-      }
-      .toSeq
-  )
-
   def getMaximalCapacity(show: Show): Future[Option[Int]] =
     findRow(show.title, show.date).map(_.map(_.capacity))
 
   def getMaximalAvailability(show: Show): Future[Option[Int]] =
     findRow(show.title, show.date).map(_.map(_.dailyAvailability))
 
-  private def convert[_](sq: collection.mutable.Seq[_]): Seq[_] =
-    collection.immutable.Seq(sq: _*)
+  private def addRow(row: TimeTableRow): Future[TimeTableRow] = Future {
+    TIMETABLE_TABLE
+      .filterNot(r => r.title == row.title && r.date == row.date)
+      .add(row)
+    row
+  }
+
 
   private val PERFORMANCE_INFO_TABLE =
     new mutable.HashMap[String, Performance]()
