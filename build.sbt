@@ -5,6 +5,7 @@ lazy val root = (project in file("."))
     inThisBuild(List(organization := "com.vacantiedisc", scalaVersion := "2.12.9")),
     name := "gregory",
     version := "0.0.1",
-    libraryDependencies ++= all
+    libraryDependencies ++= all,
+    parallelExecution in Test := false
 
   )

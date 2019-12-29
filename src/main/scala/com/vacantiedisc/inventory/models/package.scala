@@ -40,7 +40,7 @@ package object models {
   case class Validation(errors: Seq[String]) extends InventoryError
 
   sealed trait InventoryResponse
-  case class BookedResponse(title: String, date: LocalDate, amount: Int) extends InventoryResponse
+  case class BookedResponse(show: Show, amount: Int) extends InventoryResponse
   case class OverviewResponse(inventory: Seq[InventoryResult]) extends InventoryResponse
 
   type InventoryServiceResponse = Either[InventoryError, InventoryResponse]

@@ -8,6 +8,7 @@ import com.vacantiedisc.inventory.service.InventoryService
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import org.joda.time.LocalDate
 import com.vacantiedisc.inventory.json._
+import com.vacantiedisc.inventory.models.Show
 
 import scala.concurrent.duration._
 
@@ -44,7 +45,7 @@ class InventoryRoute(inventoryService: InventoryService)
               withValidateEntity[BookingRequest, BookingRequest](payload) { validatedRequest =>
                 import validatedRequest._
                 handle {
-                  inventoryService.bookPerformance(title, date, amount)
+                  inventoryService.bookPerformance(Show(title, date), amount)
                 }
               }
             }

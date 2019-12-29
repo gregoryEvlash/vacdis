@@ -4,6 +4,7 @@ import akka.actor.Actor
 import akka.pattern.pipe
 import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.db.DB
+import com.vacantiedisc.inventory.models.Show
 import com.vacantiedisc.inventory.service.PerformanceService._
 import com.vacantiedisc.inventory.util.PerformanceUtils._
 import org.joda.time.{DateTime, LocalDate}
@@ -34,9 +35,9 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
 
   override def receive: Receive = {
 
-    case GetPerformanceSoldRequest(title, performanceDate) =>
+    case GetPerformanceSoldRequest(show) =>
       Future {
-        val key = buildKey(title, performanceDate)
+        val key = buildKey(show.title, show.date)
         val sold = ledger.getOrElse(key, 0)
         PerformanceSoldToday(sold)
       } pipeTo sender
@@ -44,12 +45,12 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
     case ResetAvailability =>
      ledger.clear()
 
-    case BookShow(title, performanceDate, amount) =>
+    case BookShow(show, amount) =>
       Future{
         Try {
-          val key = buildKey(title, performanceDate)
+          val key = buildKey(show.title, show.date)
           ledger.put(key, ledger.getOrElse(key, 0) + amount)
-          ShowSuccessfullyBooked(title, performanceDate, amount)
+          ShowSuccessfullyBooked(show, amount)
         }.recover {
           case t => Error(t.getMessage)
         }.get
@@ -79,11 +80,11 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
 object PerformanceService {
 
   sealed trait PerformanceServiceMessage
-  case class GetPerformanceSoldRequest(title: String, performanceDate: LocalDate) extends PerformanceServiceMessage
+  case class GetPerformanceSoldRequest(show: Show) extends PerformanceServiceMessage
   case class GetPerformanceSoldRequestBatch(titles: Seq[String], performanceDate: LocalDate) extends PerformanceServiceMessage
 
-  case class BookShow(title: String, performanceDate: LocalDate, amount: Int) extends PerformanceServiceMessage
-  case class ShowSuccessfullyBooked(title: String, performanceDate: LocalDate, amount: Int) extends PerformanceServiceMessage
+  case class BookShow(show: Show, amount: Int) extends PerformanceServiceMessage
+  case class ShowSuccessfullyBooked(show: Show, amount: Int) extends PerformanceServiceMessage
 
   case object ResetAvailability extends PerformanceServiceMessage
 

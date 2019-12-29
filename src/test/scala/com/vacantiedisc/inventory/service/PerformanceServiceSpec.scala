@@ -5,6 +5,7 @@ import akka.pattern.ask
 import akka.testkit.TestKit
 import com.vacantiedisc.inventory.TestDataUtil
 import com.vacantiedisc.inventory.db.DB
+import com.vacantiedisc.inventory.models.Show
 import com.vacantiedisc.inventory.service.PerformanceService.{BookShow, Error, GetPerformanceSoldRequest, GetPerformanceSoldRequestBatch, PerformanceSoldToday, PerformanceSoldTodayBatch, ResetAvailability, ShowSuccessfullyBooked}
 import com.vacantiedisc.inventory.util.PerformanceUtils
 import org.scalatest.{Matchers, WordSpec, WordSpecLike}
@@ -21,7 +22,7 @@ class PerformanceServiceSpec
   private val condition = generateCondition(10)
   private val performance = generatePerformance
   private val timetable = PerformanceUtils.applyRule(performance)(condition)
-  private val gaugeShow = timetable.head
+  private val gaugeShow = Show(timetable.head.title, timetable.head.date)
   private val amount = Random.nextInt(5)
 
   private val performanceService = system.actorOf(Props(classOf[PerformanceService], db))
@@ -29,13 +30,13 @@ class PerformanceServiceSpec
   "Performance service" must {
 
     "book show" in {
-      val result = performanceService ? BookShow(gaugeShow.title, gaugeShow.date, amount)
+      val result = performanceService ? BookShow(gaugeShow, amount)
 
-      await(result) shouldBe ShowSuccessfullyBooked(gaugeShow.title, gaugeShow.date, amount)
+      await(result) shouldBe ShowSuccessfullyBooked(gaugeShow, amount)
     }
 
     "send back messages PerformanceSoldToday" in {
-      val result = performanceService ? GetPerformanceSoldRequest(gaugeShow.title, gaugeShow.date)
+      val result = performanceService ? GetPerformanceSoldRequest(gaugeShow)
 
       await(result) shouldBe PerformanceSoldToday(amount)
     }

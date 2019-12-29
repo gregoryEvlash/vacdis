@@ -14,11 +14,9 @@ class DB() {
   private val TIMETABLE_TABLE = mutable.Set.empty[TimeTableRow]
 
   def findRow(title: String, date: LocalDate): Future[Option[TimeTableRow]] =
-    Future (
-      TIMETABLE_TABLE.find { r =>
-        r.title == title && r.date == date
-      }
-    )
+    Future(TIMETABLE_TABLE.find { r =>
+      r.title == title && r.date == date
+    })
 
   /**
     *   Represent DB transaction for increment sold tickets
@@ -35,25 +33,24 @@ class DB() {
     } yield addedRow.sold
   }
 
-  def insertRows(timetables: Seq[TimeTable]): Future[Unit] = Future(
-    timetables.foreach { tt =>
-      import tt._
-      val row = TimeTableRow(
-        title,
-        date,
-        capacity,
-        discountPercent,
-        dailyAvailability,
-        0
-      )
-      TIMETABLE_TABLE.add(row)
-    }
-  )
+  def insertRows(timetables: Seq[TimeTable]): Future[Unit] =
+    Future
+      .sequence(timetables.map { tt =>
+        import tt._
+        val row = TimeTableRow(
+          title,
+          date,
+          capacity,
+          discountPercent,
+          dailyAvailability,
+          0
+        )
+        addRow(row)
+      })
+      .map(_ => ())
 
   def getShows(date: LocalDate): Future[Seq[TimeTableRow]] =
-    Future(
-      TIMETABLE_TABLE.filter(_.date == date).toSeq
-    )
+    Future(TIMETABLE_TABLE.filter(_.date == date).toSeq)
 
   def getMaximalCapacity(show: Show): Future[Option[Int]] =
     findRow(show.title, show.date).map(_.map(_.capacity))
@@ -63,19 +60,17 @@ class DB() {
 
   private def addRow(row: TimeTableRow): Future[TimeTableRow] = Future {
     TIMETABLE_TABLE
-      .filterNot(r => r.title == row.title && r.date == row.date)
-      .add(row)
+      .find(r => r.title == row.title && r.date == row.date)
+      .fold[Unit] { () } { TIMETABLE_TABLE.remove }
+    TIMETABLE_TABLE.add(row)
     row
   }
-
 
   private val PERFORMANCE_INFO_TABLE =
     new mutable.HashMap[String, Performance]()
 
-  def putPerformances(batch: Seq[Performance]): Future[Unit] =
-    Future(
-      batch.foreach(p => PERFORMANCE_INFO_TABLE.put(p.title, p))
-    )
+  def insertPerformances(batch: Seq[Performance]): Future[Unit] =
+    Future(batch.foreach(p => PERFORMANCE_INFO_TABLE.put(p.title, p)))
 
   def getPerformances(titles: Seq[String]): Future[Seq[Performance]] =
     Future(
@@ -87,7 +82,9 @@ class DB() {
       PERFORMANCE_INFO_TABLE
         .filter(x => titles.contains(x._1))
         .values
-        .map { p => p.title -> p.genre }
+        .map { p =>
+          p.title -> p.genre
+        }
         .toMap
     )
 

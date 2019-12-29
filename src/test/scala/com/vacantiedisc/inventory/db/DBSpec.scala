@@ -6,8 +6,6 @@ import com.vacantiedisc.inventory.util.PerformanceUtils
 import org.scalatest.{Matchers, WordSpec}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
 import scala.util.Random
 
 class DBSpec extends WordSpec with Matchers with TestDataUtil{
@@ -37,10 +35,9 @@ class DBSpec extends WordSpec with Matchers with TestDataUtil{
     }
 
     "increaseSold on amount" in {
-      val amount = Random.nextInt(5)
       val result = for {
         before    <- db.findRow(performance.title, gaugeShow.date)
-        newAmount <- db.increaseSold(Show(gaugeShow.title, gaugeShow.date), amount)
+        newAmount <- db.increaseSold(Show(gaugeShow.title, gaugeShow.date), 1)
         after     <- db.findRow(performance.title, gaugeShow.date)
       } yield {
         after.get.sold - before.get.sold shouldBe newAmount
@@ -58,7 +55,7 @@ class DBSpec extends WordSpec with Matchers with TestDataUtil{
 
     "search across performance" in {
       val result = for{
-        _                 <- db.putPerformances(Seq(performance))
+        _                 <- db.insertPerformances(Seq(performance))
         foundPerformances <- db.getPerformances(Seq(performance.title))
         foundGenres       <- db.findGenres(Seq(performance.title))
       } yield {
