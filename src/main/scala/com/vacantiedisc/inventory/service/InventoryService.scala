@@ -41,27 +41,24 @@ class InventoryService(db: DB,
         Right(OverviewResponse(seq))
       }
 
-  def bookPerformance(show: Show,
-                      amount: Int): Future[InventoryServiceResponse] = {
+  def bookPerformance(show: Show, amount: Int): Future[InventoryServiceResponse] = {
     deriveBookingAvailability(
       show.title,
       show.date,
       amount,
       conditionsConf.sellingStartBeforeDays
     ).flatMap { either =>
-        either.fold(
-          l => Future.successful(Left(l)),
-          r =>
-            (performanceService ? BookShow(show, amount))
-              .mapTo[PerformanceServiceMessage]
-              .flatMap(handleBookingResponse)
-        )
-      }
+      either.fold(
+        l => Future.successful(Left(l)),
+        _ =>
+          (performanceService ? BookShow(show, amount))
+            .mapTo[PerformanceServiceMessage]
+            .flatMap(handleBookingResponse)
+      )
+    }
   }
 
-  private def handleBookingResponse(
-    msg: PerformanceServiceMessage
-  ): Future[InventoryServiceResponse] = msg match {
+  private def handleBookingResponse(msg: PerformanceServiceMessage): Future[InventoryServiceResponse] = msg match {
     case ShowSuccessfullyBooked(show, amount) =>
       db.increaseSold(show, amount).map { _ =>
         Right(BookedResponse(show, amount))
@@ -105,10 +102,7 @@ class InventoryService(db: DB,
     }
   }
 
-  protected def getInventory(
-    queryDate: LocalDate,
-    performanceDate: LocalDate
-  ): Future[Seq[InventoryResult]] = {
+  protected def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Future[Seq[InventoryResult]] = {
 
     val result = for {
       rows <- db.getShows(performanceDate)
@@ -132,9 +126,7 @@ class InventoryService(db: DB,
     result.map(toInventoryResult)
   }
 
-  private def toInventoryResult(
-    info: Seq[(Genre, ShowInfo)]
-  ): Seq[InventoryResult] = {
+  private def toInventoryResult(info: Seq[(Genre, ShowInfo)]): Seq[InventoryResult] = {
     info
       .groupBy(_._1)
       .map {
@@ -153,9 +145,7 @@ class InventoryService(db: DB,
       performanceDate
     )).mapTo[PerformanceSoldTodayBatch]
 
-  private def askAvailability(
-                               show: Show
-  ): Future[PerformanceSoldToday] =
+  private def askAvailability(show: Show): Future[PerformanceSoldToday] =
     (performanceService ? GetPerformanceSoldRequest(show))
       .mapTo[PerformanceSoldToday]
 

@@ -13,8 +13,16 @@ import org.joda.time.LocalDate
 package object json {
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
 
-  implicit val bookingOverviewRequestDecoder: Decoder[BookingOverviewRequest] = deriveConfiguredMagnoliaDecoder[BookingOverviewRequest]
-  implicit val bookingRequestDecoder: Decoder[BookingRequest] = deriveConfiguredMagnoliaDecoder[BookingRequest]
+  implicit val bookingOverviewRequestDecoder: Decoder[BookingOverviewRequest] = {
+    implicit val kebabConf: Configuration = Configuration.default.withKebabCaseMemberNames
+
+    deriveConfiguredMagnoliaDecoder[BookingOverviewRequest]
+  }
+  implicit val bookingRequestDecoder: Decoder[BookingRequest] = {
+    implicit val kebabConf: Configuration = Configuration.default.withKebabCaseMemberNames
+
+    deriveConfiguredMagnoliaDecoder[BookingRequest]
+  }
 
   val localDateDecoderError = DecodingFailure("Wrong date format", Nil)
   implicit val dateDecoder: Decoder[LocalDate] = _.value match {
