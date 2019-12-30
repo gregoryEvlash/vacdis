@@ -33,9 +33,8 @@ class InventoryServiceSpec
 
     "calculatePrice properly" in {
       val price = derivePrice(performance.genre, ConfigProvider.priceConf)
-      val result = calculatePrice(price, 20)
 
-      result shouldBe price*0.8
+      calculatePrice(price, 20) shouldBe price * 0.8
     }
 
     "deriveShowStatus properly" in {
@@ -48,8 +47,6 @@ class InventoryServiceSpec
       deriveShowStatus(gaugeRow, gaugeRow.date, sellingBefore)                                shouldBe OpenForSale
 
     }
-
-
   }
 
   "InventoryService" should {

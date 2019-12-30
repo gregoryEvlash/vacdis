@@ -15,9 +15,9 @@ class PerformanceInfoParserSpec extends WordSpec with Matchers {
   "PerformanceInfoParser" should {
 
     "parse genre" in {
-      PerformanceInfoParser.parseGenre("COMEDY") shouldBe Some(COMEDY)
-      PerformanceInfoParser.parseGenre("DRAMA") shouldBe Some(DRAMA)
-      PerformanceInfoParser.parseGenre("MUSICAL") shouldBe Some(MUSICAL)
+      PerformanceInfoParser.parseGenre("COMEDY")             shouldBe Some(COMEDY)
+      PerformanceInfoParser.parseGenre("DRAMA")              shouldBe Some(DRAMA)
+      PerformanceInfoParser.parseGenre("MUSICAL")            shouldBe Some(MUSICAL)
       PerformanceInfoParser.parseGenre(Random.nextString(5)) shouldBe None
     }
 
@@ -29,8 +29,8 @@ class PerformanceInfoParserSpec extends WordSpec with Matchers {
       val comedyRand = "cOmEdy"
 
       PerformanceInfoParser.parseGenre(comedyCapital) shouldBe gauge
-      PerformanceInfoParser.parseGenre(comedyLower) shouldBe gauge
-      PerformanceInfoParser.parseGenre(comedyRand) shouldBe gauge
+      PerformanceInfoParser.parseGenre(comedyLower)   shouldBe gauge
+      PerformanceInfoParser.parseGenre(comedyRand)    shouldBe gauge
     }
 
     "parse csv row" in {
