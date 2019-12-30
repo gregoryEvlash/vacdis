@@ -90,7 +90,7 @@ class InventoryService(db: DB,
           Left(TicketsSoldOut(title, performanceDate))
         case Some(p) if p.dailyAvailability <= availability.sold =>
           Left(Custom(s"Tickets limit on $title reached for today"))
-        case Some(p) if p.dailyAvailability - availability.sold <= amount =>
+        case Some(p) if p.dailyAvailability - availability.sold < amount =>
           Left(
             Custom(
               s"You cant by more than ${p.dailyAvailability - availability.sold} tickets today"

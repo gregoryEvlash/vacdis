@@ -13,7 +13,7 @@ object FileService extends LazyLogging{
   def parseFile(path: String): Seq[Performance] = {
     Try {
       val reader = CSVReader.open(new File(path))
-      val data =  reader.all().flatMap(PerformanceInfoParser.parse)
+      val data =  reader.all().filter(_.forall(_.nonEmpty)).flatMap(PerformanceInfoParser.parse)
       reader.close()
       data
     }.recover{
