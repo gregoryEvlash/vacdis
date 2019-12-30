@@ -1,8 +1,9 @@
 package com.vacantiedisc.inventory.service
 
+import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.util.DateUtils
 import org.joda.time.LocalDate
-import com.vacantiedisc.inventory.json._
+import com.vacantiedisc.inventory.json.response.response._
 import io.circe.syntax._
 
 import scala.concurrent.{Await, Future}
@@ -10,7 +11,7 @@ import scala.util.Try
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait CLI {
+trait CLI extends LazyLogging{
 
   val timeout: FiniteDuration = 5.seconds
 
@@ -18,8 +19,8 @@ trait CLI {
     Await.result(inventoryService.applyFileData(args.head), timeout)
   }.recover{
     case t =>
-      println(s"$t")
-      println("Please provide correct file")
+      logger.error(s"$t")
+      logger.info("Please provide correct file")
       System.exit(1)
   }
 

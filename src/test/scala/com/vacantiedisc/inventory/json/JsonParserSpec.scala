@@ -1,6 +1,7 @@
 package com.vacantiedisc.inventory.json
 
 import com.vacantiedisc.inventory.models.{SaleNotStarted, ShowInfo}
+import com.vacantiedisc.inventory.json.response.response._
 import org.scalatest.{Matchers, WordSpec}
 
 class JsonParserSpec extends WordSpec with Matchers {

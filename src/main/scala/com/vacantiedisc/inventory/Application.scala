@@ -17,15 +17,15 @@ object Application extends CLI{
 
     val db = new DB()
     val performanceService = system.actorOf(Props(classOf[PerformanceService], db))
-    val inventoryService = new InventoryService(db, conditionsConf, priceConf, performanceService)
+    val inventoryService   = new InventoryService(db, conditionsConf, priceConf, performanceService)
 
     initData(args)(inventoryService)
+
     val appliedArgsResult = applyArguments(args)(inventoryService)
-    val message = Await.result(appliedArgsResult, timeout)
+    val message           = Await.result(appliedArgsResult, timeout)
     println(message)
 
     val routes = new InventoryRoute(inventoryService).routes
     Http(system).bindAndHandle(routes, httpConf.host, httpConf.port)
-
   }
 }

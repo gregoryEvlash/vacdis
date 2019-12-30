@@ -42,10 +42,10 @@ class InventoryServiceSpec
       val sellingBefore = 0
       val gaugeRow = await(db.findRow(gaugeTimeTable.title, gaugeTimeTable.date)).get
 
-      deriveShowStatus(gaugeRow, gaugeRow.date.plusDays(1), sellingBefore) shouldBe InThePast
-      deriveShowStatus(gaugeRow, gaugeRow.date.minusDays(1), sellingBefore) shouldBe SaleNotStarted
+      deriveShowStatus(gaugeRow, gaugeRow.date.plusDays(1), sellingBefore)             shouldBe InThePast
+      deriveShowStatus(gaugeRow, gaugeRow.date.minusDays(1), sellingBefore)            shouldBe SaleNotStarted
       deriveShowStatus(gaugeRow.copy(sold = gaugeRow.capacity), gaugeRow.date, sellingBefore) shouldBe SoldOut
-      deriveShowStatus(gaugeRow, gaugeRow.date, sellingBefore) shouldBe OpenForSale
+      deriveShowStatus(gaugeRow, gaugeRow.date, sellingBefore)                                shouldBe OpenForSale
 
     }
 

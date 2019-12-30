@@ -7,7 +7,7 @@ import com.vacantiedisc.inventory.http.models.{BookingOverviewRequest, BookingRe
 import com.vacantiedisc.inventory.service.InventoryService
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import org.joda.time.LocalDate
-import com.vacantiedisc.inventory.json._
+import com.vacantiedisc.inventory.json.request.request._
 import com.vacantiedisc.inventory.models.Show
 
 import scala.concurrent.duration._
@@ -15,14 +15,13 @@ import scala.concurrent.duration._
 class InventoryRoute(inventoryService: InventoryService)
   extends LazyLogging
     with HttpHelper
-    with Directives
-{
+    with Directives {
 
-  implicit val timeout: Timeout = 10 seconds
+  implicit val timeout: Timeout = 10.seconds
 
   private val mainPrefix = "inventory"
-  private val overview = "overview"
-  private val book = "book"
+  private val overview   = "overview"
+  private val book       = "book"
 
   def routes: Route =
     pathPrefix(mainPrefix) {

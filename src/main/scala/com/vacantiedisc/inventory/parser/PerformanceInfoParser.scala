@@ -1,15 +1,18 @@
 package com.vacantiedisc.inventory.parser
 
+import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.models._
 import com.vacantiedisc.inventory.util.DateUtils
 
-object PerformanceInfoParser {
+object PerformanceInfoParser extends LazyLogging{
 
   def parseGenre(s: String): Option[Genre] = s.toLowerCase match {
     case "musical" => Some(MUSICAL)
     case "comedy"  => Some(COMEDY)
     case "drama"   => Some(DRAMA)
-    case _         => None
+    case _         =>
+      logger.warn(s"Unable to parse genre $s")
+      None
   }
 
   def parse(row: List[String]): Option[Performance] = {
@@ -21,7 +24,9 @@ object PerformanceInfoParser {
         } yield {
           Performance(title, dateValue, genreValue)
         }
-      case _ => None
+      case row =>
+        logger.warn(s"Unable to parse row ${row.mkString(",")}")
+        None
     }
   }
 

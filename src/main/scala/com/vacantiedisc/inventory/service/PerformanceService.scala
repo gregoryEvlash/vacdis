@@ -43,9 +43,11 @@ class PerformanceService(db: DB) extends Actor with LazyLogging {
       } pipeTo sender
 
     case ResetAvailability =>
-     ledger.clear()
+      logger.info("Reset daily availability")
+      ledger.clear()
 
     case BookShow(show, amount) =>
+      logger.info(s"Receive booking request ${show.title} on ${show.date} for $amount tickets")
       Future{
         Try {
           val key = buildKey(show.title, show.date)

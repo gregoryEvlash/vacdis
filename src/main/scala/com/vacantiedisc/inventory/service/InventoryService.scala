@@ -3,6 +3,7 @@ package com.vacantiedisc.inventory.service
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
+import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.config.{ConditionsConf, PriceConf}
 import com.vacantiedisc.inventory.db.{DB, TimeTableRow}
 import com.vacantiedisc.inventory.models._
@@ -18,24 +19,22 @@ class InventoryService(db: DB,
                        conditionsConf: ConditionsConf,
                        priceConf: PriceConf,
                        performanceService: ActorRef)
-    extends InventoryUtils {
+    extends InventoryUtils with LazyLogging {
 
   implicit val timeout: Timeout = 10.seconds
 
   def applyFileData(path: String): Future[Unit] =
     for {
+      _    <- Future(logger.info(s"Applying data from file $path"))
       data <- Future(FileService.parseFile(path))
-      _ <- db.insertPerformances(data)
+      _    <- db.insertPerformances(data)
       timeTables = data.flatMap(
         PerformanceUtils.convertToTimeTable(_)(conditionsConf)
       )
       _ <- db.insertRows(timeTables)
     } yield ()
 
-  def getInventoryForDate(
-    queryDate: LocalDate,
-    performanceDate: LocalDate
-  ): Future[InventoryServiceResponse] =
+  def getInventoryForDate(queryDate: LocalDate, performanceDate: LocalDate): Future[InventoryServiceResponse] =
     getInventory(queryDate, performanceDate)
       .map { seq =>
         Right(OverviewResponse(seq))
@@ -74,7 +73,8 @@ class InventoryService(db: DB,
     sellingStartBeforeDays: Int
   ): Future[Either[InventoryError, TimeTableRow]] = {
     for {
-      maybeRow <- db.findRow(title, performanceDate)
+      _            <- Future(logger.info("Evaluate booking availability"))
+      maybeRow     <- db.findRow(title, performanceDate)
       availability <- askAvailability(Show(title, performanceDate))
     } yield {
       maybeRow match {
@@ -103,7 +103,6 @@ class InventoryService(db: DB,
   }
 
   protected def getInventory(queryDate: LocalDate, performanceDate: LocalDate): Future[Seq[InventoryResult]] = {
-
     val result = for {
       rows <- db.getShows(performanceDate)
       titles = rows.map(_.title)
@@ -136,14 +135,9 @@ class InventoryService(db: DB,
       .toSeq
   }
 
-  private def askAvailabilityBatch(
-    titles: Seq[String],
-    performanceDate: LocalDate
-  ): Future[PerformanceSoldTodayBatch] =
-    (performanceService ? GetPerformanceSoldRequestBatch(
-      titles,
-      performanceDate
-    )).mapTo[PerformanceSoldTodayBatch]
+  private def askAvailabilityBatch(titles: Seq[String], performanceDate: LocalDate): Future[PerformanceSoldTodayBatch] =
+    (performanceService ? GetPerformanceSoldRequestBatch(titles, performanceDate))
+      .mapTo[PerformanceSoldTodayBatch]
 
   private def askAvailability(show: Show): Future[PerformanceSoldToday] =
     (performanceService ? GetPerformanceSoldRequest(show))

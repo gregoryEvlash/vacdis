@@ -1,5 +1,6 @@
 package com.vacantiedisc.inventory.db
 
+import com.typesafe.scalalogging.LazyLogging
 import com.vacantiedisc.inventory.models._
 import org.joda.time.LocalDate
 
@@ -7,7 +8,7 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DB() {
+class DB() extends LazyLogging{
 
   val notFoundException = new Exception("Performance not found")
 
@@ -24,30 +25,32 @@ class DB() {
     * @return Ticket already sold
     */
   def increaseSold(show: Show, amount: Int = 1): Future[Int] = {
+    logger.debug(s"Increase sold of ${show.title} on ${show.date} by $amount")
     for {
       maybeRow <- findRow(show.title, show.date)
-      newRow = maybeRow.map(row => row.copy(sold = row.sold + amount))
+      newRow   = maybeRow.map(row => row.copy(sold = row.sold + amount))
       addedRow <- newRow.fold(Future.failed[TimeTableRow](notFoundException))(
-        addRow
+        updateRow
       )
     } yield addedRow.sold
   }
 
-  def insertRows(timetables: Seq[TimeTable]): Future[Unit] =
-    Future
-      .sequence(timetables.map { tt =>
+  def insertRows(timetables: Seq[TimeTable]): Future[Seq[TimeTableRow]] = {
+    logger.info(s"Insert new timetables")
+    Future.sequence(
+      timetables.map { tt =>
         import tt._
-        val row = TimeTableRow(
+        TimeTableRow(
           title,
           date,
           capacity,
           discountPercent,
           dailyAvailability,
-          0
+          sold = 0
         )
-        addRow(row)
-      })
-      .map(_ => ())
+      }.map(addRow)
+    )
+  }
 
   def getShows(date: LocalDate): Future[Seq[TimeTableRow]] =
     Future(TIMETABLE_TABLE.filter(_.date == date).toSeq)
@@ -59,6 +62,11 @@ class DB() {
     findRow(show.title, show.date).map(_.map(_.dailyAvailability))
 
   private def addRow(row: TimeTableRow): Future[TimeTableRow] = Future {
+    TIMETABLE_TABLE.add(row)
+    row
+  }
+
+  private def updateRow(row: TimeTableRow): Future[TimeTableRow] = Future {
     TIMETABLE_TABLE
       .find(r => r.title == row.title && r.date == row.date)
       .fold[Unit] { () } { TIMETABLE_TABLE.remove }
@@ -66,11 +74,13 @@ class DB() {
     row
   }
 
-  private val PERFORMANCE_INFO_TABLE =
-    new mutable.HashMap[String, Performance]()
+  private val PERFORMANCE_INFO_TABLE = new mutable.HashMap[String, Performance]()
 
-  def insertPerformances(batch: Seq[Performance]): Future[Unit] =
-    Future(batch.foreach(p => PERFORMANCE_INFO_TABLE.put(p.title, p)))
+  def insertPerformances(batch: Seq[Performance]): Future[Seq[Performance]] =
+    Future{
+      logger.info(s"Insert new performances")
+      batch.flatMap(p => PERFORMANCE_INFO_TABLE.put(p.title, p))
+    }
 
   def getPerformances(titles: Seq[String]): Future[Seq[Performance]] =
     Future(

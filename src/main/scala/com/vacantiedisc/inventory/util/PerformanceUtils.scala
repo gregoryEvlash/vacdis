@@ -16,7 +16,6 @@ object PerformanceUtils {
   def convertToTimeTable(performance: Performance)(conf: ConditionsConf): Seq[TimeTable] = {
     val forRule = applyRule(performance) _
     forRule(conf.big) ++ forRule(conf.smallRegular) ++ forRule(conf.smallDiscount)
-
   }
 
   val delim = "_-_"

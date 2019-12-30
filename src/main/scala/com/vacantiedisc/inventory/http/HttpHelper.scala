@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import com.vacantiedisc.inventory.models._
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
-import com.vacantiedisc.inventory.json._
+import com.vacantiedisc.inventory.json.response.response._
 import com.vacantiedisc.inventory.validation.Validation.Validator
 
 import scala.concurrent.Future

@@ -1,48 +1,30 @@
-package com.vacantiedisc.inventory
+package com.vacantiedisc.inventory.json.response
 
-import com.vacantiedisc.inventory.http.models.{BookingOverviewRequest, BookingRequest}
 import com.vacantiedisc.inventory.models._
 import com.vacantiedisc.inventory.util.DateUtils
 import io.circe._
 import io.circe.generic.auto._
 import io.circe.magnolia.configured.Configuration
-import io.circe.magnolia.configured.decoder.semiauto._
 import io.circe.magnolia.configured.encoder.semiauto._
 import org.joda.time.LocalDate
 
-package object json {
+package object response {
   implicit val customConfig: Configuration = Configuration.default.withSnakeCaseMemberNames
 
-  implicit val bookingOverviewRequestDecoder: Decoder[BookingOverviewRequest] = {
-    implicit val kebabConf: Configuration = Configuration.default.withKebabCaseMemberNames
-
-    deriveConfiguredMagnoliaDecoder[BookingOverviewRequest]
-  }
-  implicit val bookingRequestDecoder: Decoder[BookingRequest] = {
-    implicit val kebabConf: Configuration = Configuration.default.withKebabCaseMemberNames
-
-    deriveConfiguredMagnoliaDecoder[BookingRequest]
-  }
-
-  val localDateDecoderError = DecodingFailure("Wrong date format", Nil)
-  implicit val dateDecoder: Decoder[LocalDate] = _.value match {
-    case j if j.isString => DateUtils.toDateTime(j.asString.getOrElse("")).toRight[DecodingFailure](localDateDecoderError)
-    case _ => Left(localDateDecoderError)
-  }
   implicit val dateEncoder: Encoder[LocalDate] = x => Json.fromString(x.toString(DateUtils.timeFormat))
 
   implicit val inventoryServiceResponseFormat: Encoder[InventoryServiceResponse] = Encoder[InventoryServiceResponse]
 
   implicit val showStatusEncoder: Encoder[ShowStatus] = {
     case SaleNotStarted => Json.fromString("sale not started")
-    case OpenForSale =>Json.fromString("open for sale")
-    case SoldOut =>Json.fromString("sold out")
-    case InThePast =>Json.fromString("in the past")
+    case OpenForSale    => Json.fromString("open for sale")
+    case SoldOut        => Json.fromString("sold out")
+    case InThePast      => Json.fromString("in the past")
   }
   implicit val genreEncoder: Encoder[Genre] = {
     case MUSICAL => Json.fromString("musical")
-    case COMEDY =>Json.fromString("comedy")
-    case DRAMA =>Json.fromString("drama")
+    case COMEDY  => Json.fromString("comedy")
+    case DRAMA   => Json.fromString("drama")
   }
 
   implicit val showInfoEncoder: Encoder[ShowInfo] = deriveConfiguredMagnoliaEncoder[ShowInfo]
